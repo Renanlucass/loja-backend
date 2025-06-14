@@ -1,3 +1,4 @@
+// index.js
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -8,12 +9,30 @@ import produtosRoutes from './routes/produtos.js';
 import configuracoesRoutes from './routes/configuracoes.js';
 
 const app = express();
-app.use(cors());
+
+const allowedOrigins = [
+    'http://localhost:3001',
+    'https://loja-admin-nine.vercel.app/',
+    // 'https://sua-loja.vercel.app' 
+];
+
+const corsOptions = {
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Não permitido pelo CORS'));
+        }
+    }
+};
+
+app.use(cors(corsOptions));
+
 app.use(express.json());
 
-app.use('/categorias', categoriasRoutes);
-app.use('/produtos', produtosRoutes);
-app.use('/configuracoes', configuracoesRoutes);
+app.use('/api/categorias', categoriasRoutes);
+app.use('/api/produtos', produtosRoutes);
+app.use('/api/configuracoes', configuracoesRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
