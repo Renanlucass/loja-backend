@@ -1,30 +1,18 @@
-import express from 'express';
-import { supabase } from '../services/supabase.js';
+import { Router } from 'express';
+import { supabase } from '../services/supabase.js'; 
 
-const router = express.Router();
-
-// Listar produtos
-router.get('/', async (req, res) => {
-  const { data, error } = await supabase
-    .from('Produto')
-    .select('*');
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
-});
+const router = Router();
 
 router.get('/', async (req, res) => {
   try {
       const { destaque } = req.query;
       
-      // Inicia a construção da query
       let query = supabase.from('Produto').select('*');
 
-      // Se o parâmetro ?destaque=true for passado na URL, adiciona o filtro
       if (destaque === 'true') {
           query = query.eq('destaque', true);
       }
 
-      // Executa a query final
       const { data, error } = await query;
 
       if (error) throw error;
@@ -44,7 +32,7 @@ router.get('/:id', async (req, res) => {
     .from('Produto')
     .select('*')
     .eq('id', id)
-    .single(); // pega só um registro, já que o id é único
+    .single();
 
   if (error) return res.status(500).json({ error: error.message });
   if (!data) return res.status(404).json({ error: 'Produto não encontrado' });
