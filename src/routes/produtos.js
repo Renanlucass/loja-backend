@@ -12,6 +12,30 @@ router.get('/', async (req, res) => {
   res.json(data);
 });
 
+router.get('/', async (req, res) => {
+  try {
+      const { destaque } = req.query;
+      
+      // Inicia a construção da query
+      let query = supabase.from('Produto').select('*');
+
+      // Se o parâmetro ?destaque=true for passado na URL, adiciona o filtro
+      if (destaque === 'true') {
+          query = query.eq('destaque', true);
+      }
+
+      // Executa a query final
+      const { data, error } = await query;
+
+      if (error) throw error;
+      res.json(data);
+
+  } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Erro no servidor');
+  }
+});
+
 // Pegar produto pelo ID
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
