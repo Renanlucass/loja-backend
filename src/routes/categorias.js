@@ -5,7 +5,10 @@ const router = express.Router();
 
 // Listar todas as categorias
 router.get('/', async (req, res) => {
-  const { data, error } = await supabase.from('Categoria').select('*');
+  const { data, error } = await supabase
+    .from('Categoria')
+    .select('*')
+    .order('id', { ascending: true });  // Ordena pelo id crescente
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
