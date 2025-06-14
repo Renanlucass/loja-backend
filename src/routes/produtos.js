@@ -42,10 +42,10 @@ router.get('/:id', async (req, res) => {
 
 // Criar produto
 router.post('/', async (req, res) => {
-  const { nome, descricao, caracteristicas, preco, estoque, destaque, imagem_produto, categoriaId } = req.body;
+  const { nome, descricao, preco, estoque, destaque, imagem_produto, categoriaId } = req.body;
 
   const { data, error } = await supabase.from('Produto').insert([{
-    nome, descricao, caracteristicas, preco, estoque, destaque, imagem_produto, categoriaId
+    nome, descricao, preco, estoque, destaque, imagem_produto, categoriaId
   }]);
 
   if (error) return res.status(500).json({ error: error.message });
