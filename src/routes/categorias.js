@@ -26,6 +26,17 @@ router.get('/:id', async (req, res) => {
   res.json(data);
 });
 
+router.get('/:id/produtos', async (req, res) => {
+  const { id } = req.params;
+  const { data, error } = await supabase
+      .from('Produto')
+      .select('*')
+      .eq('categoriaId', id);
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
 // Criar categoria
 router.post('/', async (req, res) => {
   const { nome, imagem_ilustrativa } = req.body;
