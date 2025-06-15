@@ -1,14 +1,15 @@
-import express from 'express';
-import { supabase } from '../services/supabase.js';
+import { Router } from 'express';
+// Assumindo que você tem um ficheiro para inicializar o cliente Supabase
+import { supabase } from '../services/supabase.js'; 
 
-const router = express.Router();
+const router = Router();
 
 // Listar todas as categorias
 router.get('/', async (req, res) => {
   const { data, error } = await supabase
     .from('Categoria')
     .select('*')
-    .order('id', { ascending: true });  // Ordena pelo id crescente
+    .order('id', { ascending: true });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
@@ -27,14 +28,21 @@ router.get('/:id', async (req, res) => {
 });
 
 router.get('/:id/produtos', async (req, res) => {
-  const { id } = req.params;
-  const { data, error } = await supabase
-      .from('Produto')
-      .select('*')
-      .eq('categoriaId', id);
+    const { id } = req.params;
 
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+    const { sort } = req.query;
+
+    const isAscending = sort === 'asc';
+
+    const { data, error } = await supabase
+        .from('Produto')
+        .select('*')
+        .eq('categoriaId', id)
+
+        .order('id', { ascending: isAscending }); 
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
 });
 
 // Criar categoria
@@ -43,7 +51,7 @@ router.post('/', async (req, res) => {
   const { data, error } = await supabase.from('Categoria').insert([{ nome, imagem_ilustrativa }]);
   if (error) return res.status(500).json({ error: error.message });
   res.status(201).json(data);
-});
+}); 
 
 // Atualizar categoria
 router.put('/:id', async (req, res) => {
