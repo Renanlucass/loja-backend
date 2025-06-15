@@ -18,6 +18,28 @@ router.get('/', async (req, res) => {
     }
 });
 
+router.get('/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { data, error } = await supabase
+            .from('Pedidos')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+
+        if (!data) {
+            return res.status(404).json({ error: 'Pedido não encontrado' });
+        }
+
+        res.json(data);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Erro no servidor ao buscar o pedido.');
+    }
+});
+
 router.post('/', async (req, res) => {
     try {
         const {
