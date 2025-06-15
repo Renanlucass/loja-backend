@@ -3,32 +3,34 @@ import { supabase } from '../services/supabase.js';
 
 const router = Router();
 
-// Listar produtos (agora com ordenação)
 router.get('/', async (req, res) => {
   try {
-      const { destaque } = req.query;
-      
-      let query = supabase
-          .from('Produto')
-          .select('*')
-          .order('id', { ascending: true });
+    const { destaque, incluir_arquivados } = req.query;
 
-      if (destaque === 'true') {
-          query = query.eq('destaque', true);
-      }
+    let query = supabase
+      .from('Produto')
+      .select('*')
+      .order('id', { ascending: true });
 
-      const { data, error } = await query;
+    if (incluir_arquivados !== 'true') {
+      query = query.eq('arquivado', false);
+    }
 
-      if (error) throw error;
-      res.json(data);
+    if (destaque === 'true') {
+      query = query.eq('destaque', true);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+    res.json(data);
 
   } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Erro no servidor');
+    console.error(err.message);
+    res.status(500).send('Erro no servidor');
   }
 });
 
-// Pegar produto pelo ID
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
 
@@ -44,7 +46,6 @@ router.get('/:id', async (req, res) => {
   res.json(data);
 });
 
-// Criar produto
 router.post('/', async (req, res) => {
   const { nome, descricao, preco, estoque, destaque, imagem_produto, categoriaId } = req.body;
 
@@ -56,7 +57,6 @@ router.post('/', async (req, res) => {
   res.status(201).json(data);
 });
 
-// Atualizar produto
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const updates = req.body;
@@ -66,12 +66,46 @@ router.put('/:id', async (req, res) => {
   res.json(data);
 });
 
-// Deletar produto
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   const { error } = await supabase.from('Produto').delete().eq('id', id);
   if (error) return res.status(500).json({ error: error.message });
   res.status(204).send();
+});
+
+router.patch('/:id/estoque', async (req, res) => {
+  const { id } = req.params;
+  const { novoEstoque, arquivar } = req.body;
+
+  try {
+    const updateData = {};
+
+    if (typeof novoEstoque === 'number') {
+      updateData.estoque = novoEstoque;
+    }
+
+    if (typeof arquivar === 'boolean') {
+      updateData.arquivado = arquivar;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'Nenhuma ação de atualização fornecida.' });
+    }
+
+    const { data, error } = await supabase
+      .from('Produto')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json(data);
+
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Erro no servidor');
+  }
 });
 
 export default router;
