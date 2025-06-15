@@ -1,13 +1,17 @@
 import { Router } from 'express';
-import { supabase } from '../services/supabase.js'; 
+import { supabase } from '../services/supabase.js';
 
 const router = Router();
 
+// Listar produtos (agora com ordenação)
 router.get('/', async (req, res) => {
   try {
       const { destaque } = req.query;
       
-      let query = supabase.from('Produto').select('*');
+      let query = supabase
+          .from('Produto')
+          .select('*')
+          .order('id', { ascending: true });
 
       if (destaque === 'true') {
           query = query.eq('destaque', true);
