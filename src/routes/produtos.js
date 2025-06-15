@@ -5,12 +5,13 @@ const router = Router();
 
 router.get('/', async (req, res) => {
   try {
-    const { destaque, incluir_arquivados } = req.query;
+    const { destaque, incluir_arquivados, sort } = req.query;
+    const isAscending = sort !== 'desc';
 
     let query = supabase
       .from('Produto')
       .select('*')
-      .order('id', { ascending: true });
+      .order('id', { ascending: isAscending });
 
     if (incluir_arquivados !== 'true') {
       query = query.eq('arquivado', false);
@@ -28,6 +29,28 @@ router.get('/', async (req, res) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Erro no servidor');
+  }
+});
+
+
+router.patch('/:id/update', async (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+  try {
+      if (Object.keys(updateData).length === 0) {
+          return res.status(400).json({ error: 'Nenhum dado para atualização fornecido.' });
+      }
+      const { data, error } = await supabase
+          .from('Produto')
+          .update(updateData)
+          .eq('id', id)
+          .select()
+          .single();
+      if (error) throw error;
+      res.json(data);
+  } catch(err) {
+      console.error(err.message);
+      res.status(500).send('Erro no servidor');
   }
 });
 
@@ -71,41 +94,6 @@ router.delete('/:id', async (req, res) => {
   const { error } = await supabase.from('Produto').delete().eq('id', id);
   if (error) return res.status(500).json({ error: error.message });
   res.status(204).send();
-});
-
-router.patch('/:id/estoque', async (req, res) => {
-  const { id } = req.params;
-  const { novoEstoque, arquivar } = req.body;
-
-  try {
-    const updateData = {};
-
-    if (typeof novoEstoque === 'number') {
-      updateData.estoque = novoEstoque;
-    }
-
-    if (typeof arquivar === 'boolean') {
-      updateData.arquivado = arquivar;
-    }
-
-    if (Object.keys(updateData).length === 0) {
-      return res.status(400).json({ error: 'Nenhuma ação de atualização fornecida.' });
-    }
-
-    const { data, error } = await supabase
-      .from('Produto')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    res.json(data);
-
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Erro no servidor');
-  }
 });
 
 export default router;
