@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 
 const router = Router();
 
-router.post('/login', async (req, res) => {
+router.post('/home', async (req, res) => {
     const { username, password } = req.body;
 
     const correctUser = process.env.ADMIN_USER;

@@ -6,6 +6,7 @@ dotenv.config();
 import categoriasRoutes from './routes/categorias.js';
 import produtosRoutes from './routes/produtos.js';
 import configuracoesRoutes from './routes/configuracoes.js';
+import authRoutes from './routes/auth.js'
 
 const app = express();
 app.use(cors());
