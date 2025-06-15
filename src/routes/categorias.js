@@ -1,5 +1,4 @@
 import { Router } from 'express';
-// Assumindo que você tem um ficheiro para inicializar o cliente Supabase
 import { supabase } from '../services/supabase.js'; 
 
 const router = Router();
