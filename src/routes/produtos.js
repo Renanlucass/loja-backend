@@ -72,9 +72,13 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   const { nome, descricao, preco, estoque, destaque, imagem_produto, categoriaId } = req.body;
 
-  const { data, error } = await supabase.from('Produto').insert([{
+  const { data, error } = await supabase
+  .from('Produto')
+  .insert([{
     nome, descricao, preco, estoque, destaque, imagem_produto, categoriaId
-  }]);
+  }])
+  .select()
+  .single();
 
   if (error) return res.status(500).json({ error: error.message });
   res.status(201).json(data);
