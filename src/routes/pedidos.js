@@ -49,6 +49,7 @@ router.post('/', async (req, res) => {
             metodo_entrega,
             forma_pagamento,
             tipo_cartao,
+            parcelas,
             itens_pedido,
             subtotal,
             total_pedido
@@ -67,6 +68,7 @@ router.post('/', async (req, res) => {
                 metodo_entrega,
                 forma_pagamento,
                 tipo_cartao,
+                parcelas,
                 itens_pedido,
                 subtotal,
                 total_pedido
