@@ -49,7 +49,8 @@ router.post('/', async (req, res) => {
             metodo_entrega,
             forma_pagamento,
             itens_pedido,
-            subtotal
+            subtotal,
+            total_pedido
         } = req.body;
 
         if (!nome_cliente || !telefone_cliente || !itens_pedido) {
@@ -65,7 +66,8 @@ router.post('/', async (req, res) => {
                 metodo_entrega,
                 forma_pagamento,
                 itens_pedido,
-                subtotal
+                subtotal,
+                total_pedido
             }])
             .select()
             .single();
