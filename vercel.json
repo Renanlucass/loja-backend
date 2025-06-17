@@ -1,0 +1,21 @@
+{
+    "version": 2,
+    "builds": [
+      {
+        "src": "index.js",
+        "use": "@vercel/node"
+      }
+    ],
+    "functions": {
+      "index.js": {
+        "regions": ["gru1"]
+      }
+    },
+    "rewrites": [
+      {
+        "source": "/(.*)",
+        "destination": "/index.js"
+      }
+    ]
+  }
+  

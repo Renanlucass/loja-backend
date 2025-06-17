@@ -19,7 +19,10 @@ app.use('/categorias', categoriasRoutes);
 app.use('/produtos', produtosRoutes);
 app.use('/configuracoes', configuracoesRoutes);
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
+// const PORT = process.env.PORT || 4000;
+// app.listen(PORT, () => {
+//   console.log(`Servidor rodando na porta ${PORT}`);
+// });
+
+
+export default app;
