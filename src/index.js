@@ -6,8 +6,9 @@ dotenv.config();
 import categoriasRoutes from './routes/categorias.js';
 import produtosRoutes from './routes/produtos.js';
 import configuracoesRoutes from './routes/configuracoes.js';
-import authRoutes from './routes/auth.js'
-import pedidosRoutes from './routes/pedidos.js'
+import authRoutes from './routes/auth.js';
+import pedidosRoutes from './routes/pedidos.js';
+import sliderRoutes from './routes/slider.js';
 
 const app = express();
 app.use(cors());
@@ -18,6 +19,7 @@ app.use('/auth', authRoutes);
 app.use('/categorias', categoriasRoutes);
 app.use('/produtos', produtosRoutes);
 app.use('/configuracoes', configuracoesRoutes);
+app.use('/slider', sliderRoutes);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
