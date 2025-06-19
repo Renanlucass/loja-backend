@@ -3,16 +3,6 @@ import { supabase } from '../services/supabase.js';
 
 const router = Router();
 
-function normalizeText(str) {
-  return str
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^\w\s]/gi, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
 router.get('/', async (req, res) => {
   try {
     const { destaque, incluir_arquivados, sort, page = '1', limit = '12', search = '' } = req.query;
@@ -36,24 +26,18 @@ router.get('/', async (req, res) => {
     }
 
     if (search.trim()) {
-      const searchNormalized = normalizeText(search);
-      const searchWords = searchNormalized.split(' ').filter(Boolean);
-
-      const andFilters = [];
-      searchWords.forEach(word => {
-        andFilters.push(`nome.ilike.%${word}%`);
-        andFilters.push(`descricao.ilike.%${word}%`);
+      query = query.textSearch('search_text', search, {
+        config: 'portuguese',
+        type: 'plain' 
       });
-
-      query = query.and(andFilters.join(','));
     }
-    
+
     query = query.order('id', { ascending: isAscending }).range(startIndex, endIndex);
 
     const { data, error, count } = await query;
 
     if (error) throw error;
-    
+
     res.json({
       products: data || [],
       totalCount: count,
@@ -65,7 +49,6 @@ router.get('/', async (req, res) => {
     res.status(500).send('Erro no servidor');
   }
 });
-
 router.patch('/:id/update', async (req, res) => {
   const { id } = req.params;
   const updateData = req.body;
