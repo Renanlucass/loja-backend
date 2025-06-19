@@ -3,8 +3,14 @@ import { supabase } from '../services/supabase.js';
 
 const router = Router();
 
-function normalize(text) {
-  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+function normalizeText(str) {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\w\s]/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 router.get('/', async (req, res) => {
@@ -15,11 +21,11 @@ router.get('/', async (req, res) => {
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 12;
     const startIndex = (pageNum - 1) * limitNum;
+    const endIndex = pageNum * limitNum - 1;
 
     let query = supabase
       .from('Produto')
-      .select('*')
-      .order('id', { ascending: isAscending });
+      .select('*', { count: 'exact' });
 
     if (incluir_arquivados !== 'true') {
       query = query.not('arquivado', 'is', true);
@@ -29,27 +35,29 @@ router.get('/', async (req, res) => {
       query = query.eq('destaque', true);
     }
 
-    const { data: allProducts, error } = await query;
+    if (search.trim()) {
+      const searchNormalized = normalizeText(search);
+      const searchWords = searchNormalized.split(' ').filter(Boolean);
+
+      const andFilters = [];
+      searchWords.forEach(word => {
+        andFilters.push(`nome.ilike.%${word}%`);
+        andFilters.push(`descricao.ilike.%${word}%`);
+      });
+
+      query = query.and(andFilters.join(','));
+    }
+    
+    query = query.order('id', { ascending: isAscending }).range(startIndex, endIndex);
+
+    const { data, error, count } = await query;
 
     if (error) throw error;
-
-    let filteredProducts = allProducts;
-
-    if (search.trim()) {
-      const normSearch = normalize(search.trim());
-      filteredProducts = allProducts.filter(prod =>
-        normalize(prod.nome).includes(normSearch) ||
-        normalize(prod.descricao).includes(normSearch)
-      );
-    }
-
-    const totalCount = filteredProducts.length;
-    const paginated = filteredProducts.slice(startIndex, startIndex + limitNum);
-
+    
     res.json({
-      products: paginated,
-      totalCount,
-      currentPage: pageNum
+      products: data || [],
+      totalCount: count,
+      currentPage: pageNum,
     });
 
   } catch (err) {
