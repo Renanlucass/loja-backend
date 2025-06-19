@@ -1,22 +1,16 @@
 import { Router } from 'express';
 import { supabase } from '../services/supabase.js';
 
-function removeAccents(str) {
-  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-}
-
 const router = Router();
+
+// Função para remover acentos e normalizar
+function normalizeText(text) {
+  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
 
 router.get('/', async (req, res) => {
   try {
-    const {
-      destaque,
-      incluir_arquivados,
-      sort,
-      page = '1',
-      limit = '12',
-      search = '',
-    } = req.query;
+    const { destaque, incluir_arquivados, sort, page = '1', limit = '12', search = '' } = req.query;
     const isAscending = sort !== 'desc';
 
     const pageNum = parseInt(page) || 1;
@@ -38,18 +32,24 @@ router.get('/', async (req, res) => {
     }
 
     if (search.trim()) {
-      const cleanSearch = removeAccents(search).toLowerCase();
+      const cleanedSearch = normalizeText(search.trim());
+      const words = cleanedSearch.split(/\s+/).filter(Boolean);
 
-      const words = cleanSearch.split(/\s+/).filter(Boolean);
+      // Exato primeiro (busca o termo completo)
+      let ilikeConditions = [
+        `translate(lower(nome), 'áéíóúãõâêôç', 'aeiouaoaec')ilike.%${cleanedSearch}%`,
+        `translate(lower(descricao), 'áéíóúãõâêôç', 'aeiouaoaec')ilike.%${cleanedSearch}%`
+      ];
 
-      const orFilters = words
-        .map(
-          (word) =>
-            `nome.ilike.%${word}%,descricao.ilike.%${word}%`
-        )
-        .join(',');
+      // Depois adiciona buscas por palavra, caso o usuário tenha digitado várias
+      if (words.length > 1) {
+        words.forEach(word => {
+          ilikeConditions.push(`translate(lower(nome), 'áéíóúãõâêôç', 'aeiouaoaec')ilike.%${word}%`);
+          ilikeConditions.push(`translate(lower(descricao), 'áéíóúãõâêôç', 'aeiouaoaec')ilike.%${word}%`);
+        });
+      }
 
-      query = query.or(orFilters);
+      query = query.or(ilikeConditions.join(','));
     }
 
     query = query.range(startIndex, endIndex);
@@ -63,6 +63,7 @@ router.get('/', async (req, res) => {
       totalCount: count,
       currentPage: pageNum,
     });
+
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Erro no servidor');
