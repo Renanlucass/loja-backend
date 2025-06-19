@@ -3,8 +3,7 @@ import { supabase } from '../services/supabase.js';
 
 const router = Router();
 
-// Função para remover acentos e normalizar
-function normalizeText(text) {
+function normalize(text) {
   return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
@@ -16,11 +15,10 @@ router.get('/', async (req, res) => {
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 12;
     const startIndex = (pageNum - 1) * limitNum;
-    const endIndex = pageNum * limitNum - 1;
 
     let query = supabase
       .from('Produto')
-      .select('*', { count: 'exact' })
+      .select('*')
       .order('id', { ascending: isAscending });
 
     if (incluir_arquivados !== 'true') {
@@ -31,37 +29,27 @@ router.get('/', async (req, res) => {
       query = query.eq('destaque', true);
     }
 
-    if (search.trim()) {
-      const cleanedSearch = normalizeText(search.trim());
-      const words = cleanedSearch.split(/\s+/).filter(Boolean);
-
-      // Exato primeiro (busca o termo completo)
-      let ilikeConditions = [
-        `translate(lower(nome), 'áéíóúãõâêôç', 'aeiouaoaec')ilike.%${cleanedSearch}%`,
-        `translate(lower(descricao), 'áéíóúãõâêôç', 'aeiouaoaec')ilike.%${cleanedSearch}%`
-      ];
-
-      // Depois adiciona buscas por palavra, caso o usuário tenha digitado várias
-      if (words.length > 1) {
-        words.forEach(word => {
-          ilikeConditions.push(`translate(lower(nome), 'áéíóúãõâêôç', 'aeiouaoaec')ilike.%${word}%`);
-          ilikeConditions.push(`translate(lower(descricao), 'áéíóúãõâêôç', 'aeiouaoaec')ilike.%${word}%`);
-        });
-      }
-
-      query = query.or(ilikeConditions.join(','));
-    }
-
-    query = query.range(startIndex, endIndex);
-
-    const { data, error, count } = await query;
+    const { data: allProducts, error } = await query;
 
     if (error) throw error;
 
+    let filteredProducts = allProducts;
+
+    if (search.trim()) {
+      const normSearch = normalize(search.trim());
+      filteredProducts = allProducts.filter(prod =>
+        normalize(prod.nome).includes(normSearch) ||
+        normalize(prod.descricao).includes(normSearch)
+      );
+    }
+
+    const totalCount = filteredProducts.length;
+    const paginated = filteredProducts.slice(startIndex, startIndex + limitNum);
+
     res.json({
-      products: data,
-      totalCount: count,
-      currentPage: pageNum,
+      products: paginated,
+      totalCount,
+      currentPage: pageNum
     });
 
   } catch (err) {
