@@ -5,40 +5,46 @@ const router = Router();
 
 router.get('/', async (req, res) => {
   try {
-      const { destaque, incluir_arquivados, sort, page = 1, limit = 12 } = req.query;
-      const isAscending = sort !== 'desc';
+    const { destaque, incluir_arquivados, sort, page = '1', limit = '12', search = '' } = req.query;
+    const isAscending = sort !== 'desc';
 
-      const startIndex = (page - 1) * limit;
-      const endIndex = page * limit - 1;
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 12;
+    const startIndex = (pageNum - 1) * limitNum;
+    const endIndex = pageNum * limitNum - 1;
 
-      let query = supabase
-          .from('Produto')
-          .select('*', { count: 'exact' }) 
-          .order('id', { ascending: isAscending });
+    let query = supabase
+      .from('Produto')
+      .select('*', { count: 'exact' })
+      .order('id', { ascending: isAscending });
 
-      if (incluir_arquivados !== 'true') {
-          query = query.not('arquivado', 'is', true);
-      }
+    if (incluir_arquivados !== 'true') {
+      query = query.not('arquivado', 'is', true);
+    }
 
-      if (destaque === 'true') {
-          query = query.eq('destaque', true);
-      }
+    if (destaque === 'true') {
+      query = query.eq('destaque', true);
+    }
 
-      query = query.range(startIndex, endIndex);
+    if (search) {
+      query = query.or(`nome.ilike.%${search}%,descricao.ilike.%${search}%`);
+    }
 
-      const { data, error, count } = await query;
+    query = query.range(startIndex, endIndex);
 
-      if (error) throw error;
+    const { data, error, count } = await query;
 
-      res.json({
-          products: data,
-          totalCount: count,
-          currentPage: parseInt(page),
-      });
+    if (error) throw error;
+
+    res.json({
+      products: data,
+      totalCount: count,
+      currentPage: pageNum,
+    });
 
   } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Erro no servidor');
+    console.error(err.message);
+    res.status(500).send('Erro no servidor');
   }
 });
 
