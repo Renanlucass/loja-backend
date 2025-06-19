@@ -5,33 +5,42 @@ const router = Router();
 
 router.get('/', async (req, res) => {
   try {
-    const { destaque, incluir_arquivados, sort } = req.query;
-    const isAscending = sort !== 'desc';
+      const { destaque, incluir_arquivados, sort, page = 1, limit = 12 } = req.query;
+      const isAscending = sort !== 'desc';
 
-    let query = supabase
-      .from('Produto')
-      .select('*')
-      .order('id', { ascending: isAscending });
+      const startIndex = (page - 1) * limit;
+      const endIndex = page * limit - 1;
 
-    if (incluir_arquivados !== 'true') {
-      query = query.eq('arquivado', false);
-    }
+      let query = supabase
+          .from('Produto')
+          .select('*', { count: 'exact' }) 
+          .order('id', { ascending: isAscending });
 
-    if (destaque === 'true') {
-      query = query.eq('destaque', true);
-    }
+      if (incluir_arquivados !== 'true') {
+          query = query.not('arquivado', 'is', true);
+      }
 
-    const { data, error } = await query;
+      if (destaque === 'true') {
+          query = query.eq('destaque', true);
+      }
 
-    if (error) throw error;
-    res.json(data);
+      query = query.range(startIndex, endIndex);
+
+      const { data, error, count } = await query;
+
+      if (error) throw error;
+
+      res.json({
+          products: data,
+          totalCount: count,
+          currentPage: parseInt(page),
+      });
 
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Erro no servidor');
+      console.error(err.message);
+      res.status(500).send('Erro no servidor');
   }
 });
-
 
 router.patch('/:id/update', async (req, res) => {
   const { id } = req.params;
