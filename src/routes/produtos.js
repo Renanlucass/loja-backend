@@ -1,11 +1,22 @@
 import { Router } from 'express';
 import { supabase } from '../services/supabase.js';
 
+function removeAccents(str) {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 const router = Router();
 
 router.get('/', async (req, res) => {
   try {
-    const { destaque, incluir_arquivados, sort, page = '1', limit = '12', search = '' } = req.query;
+    const {
+      destaque,
+      incluir_arquivados,
+      sort,
+      page = '1',
+      limit = '12',
+      search = '',
+    } = req.query;
     const isAscending = sort !== 'desc';
 
     const pageNum = parseInt(page) || 1;
@@ -26,8 +37,19 @@ router.get('/', async (req, res) => {
       query = query.eq('destaque', true);
     }
 
-    if (search) {
-      query = query.or(`nome.ilike.%${search}%,descricao.ilike.%${search}%`);
+    if (search.trim()) {
+      const cleanSearch = removeAccents(search).toLowerCase();
+
+      const words = cleanSearch.split(/\s+/).filter(Boolean);
+
+      const orFilters = words
+        .map(
+          (word) =>
+            `nome.ilike.%${word}%,descricao.ilike.%${word}%`
+        )
+        .join(',');
+
+      query = query.or(orFilters);
     }
 
     query = query.range(startIndex, endIndex);
@@ -41,7 +63,6 @@ router.get('/', async (req, res) => {
       totalCount: count,
       currentPage: pageNum,
     });
-
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Erro no servidor');
@@ -52,20 +73,20 @@ router.patch('/:id/update', async (req, res) => {
   const { id } = req.params;
   const updateData = req.body;
   try {
-      if (Object.keys(updateData).length === 0) {
-          return res.status(400).json({ error: 'Nenhum dado para atualização fornecido.' });
-      }
-      const { data, error } = await supabase
-          .from('Produto')
-          .update(updateData)
-          .eq('id', id)
-          .select()
-          .single();
-      if (error) throw error;
-      res.json(data);
-  } catch(err) {
-      console.error(err.message);
-      res.status(500).send('Erro no servidor');
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'Nenhum dado para atualização fornecido.' });
+    }
+    const { data, error } = await supabase
+      .from('Produto')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Erro no servidor');
   }
 });
 
@@ -88,12 +109,12 @@ router.post('/', async (req, res) => {
   const { nome, descricao, preco, estoque, destaque, imagem_produto, categoriaId } = req.body;
 
   const { data, error } = await supabase
-  .from('Produto')
-  .insert([{
-    nome, descricao, preco, estoque, destaque, imagem_produto, categoriaId
-  }])
-  .select()
-  .single();
+    .from('Produto')
+    .insert([{
+      nome, descricao, preco, estoque, destaque, imagem_produto, categoriaId
+    }])
+    .select()
+    .single();
 
   if (error) return res.status(500).json({ error: error.message });
   res.status(201).json(data);
