@@ -9,6 +9,7 @@ import configuracoesRoutes from './routes/configuracoes.js';
 import authRoutes from './routes/auth.js';
 import pedidosRoutes from './routes/pedidos.js';
 import sliderRoutes from './routes/slider.js';
+import vendedoresRoutes from './routes/vendedores.js';
 
 const app = express();
 app.use(cors());
@@ -20,6 +21,7 @@ app.use('/categorias', categoriasRoutes);
 app.use('/produtos', produtosRoutes);
 app.use('/configuracoes', configuracoesRoutes);
 app.use('/slider', sliderRoutes);
+app.use('/vendedores', vendedoresRoutes);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
